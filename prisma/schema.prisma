@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id   String @id @default(cuid())
+  name String
+
+  lines Line[]
+}
+
+model Factory {
+  id   String @id
+  name String
+
+  // statuses
+  totalCustomers   Int
+  products         Int
+  schedule         String
+  lineThroughput   String
+  lineDowntime     String
+  scrap            String
+  machinesDowntime String
+
+  lines                   Line[]
+  electricityConsumptions ElectricityConsumption[]
+}
+
+model Line {
+  id           String @id @default(cuid())
+  lineNumber   Int    @unique
+  factoryId    String
+  customerId   String
+  assembly     String
+  version      String
+  productYield String
+  efficiency   String
+  defects      String
+  wastage      String
+  usage        Int?
+
+  // error chart
+  damaged            Int?
+  missing            Int?
+  bent               Int?
+  shortOrBridging    Int?
+  wrongPart          Int?
+  improperFit        Int?
+  insufficientSolder Int?
+  badJoint           Int?
+
+  factorys                Factory                  @relation(fields: [factoryId], references: [id])
+  customers               Customer                 @relation(fields: [customerId], references: [id])
+  electricityConsumptions ElectricityConsumption[]
+}
+
+model ElectricityConsumption {
+  id        String   @id @default(cuid())
+  time      DateTime @default(now())
+  value     Int
+  lineId    String
+  factoryId String?
+
+  Line    Line     @relation(fields: [lineId], references: [id])
+  Factory Factory? @relation(fields: [factoryId], references: [id])
+}
+
+model Machine {
+  id   String @id @default(uuid())
+  name String
+
+  // extra info
+  position   Float[]
+  oee        String?
+  cycleTime  String?
+  throughput String?
+
+  issue              Issue[]
+  machineGraphStatus MachineGraphStatus[]
+}
+
+model Board {
+  id   String @id @default(uuid())
+  name String
+
+  issue              Issue[]
+  machineGraphStatus MachineGraphStatus[]
+}
+
+model Issue {
+  id         String  @id @default(uuid())
+  isResolved Boolean @default(false)
+  machineId  String @unique
+  boardId    String
+  status     String?
+
+  machine       Machine       @relation(fields: [machineId], references: [id])
+  board         Board         @relation(fields: [boardId], references: [id])
+  resolvedIssue AgentsReport?
+}
+
+model AgentsReport {
+  id        String @id @default(uuid())
+  issueId   String @unique
+  agentData Json
+
+  issue Issue @relation(fields: [issueId], references: [id])
+}
+
+model MachineGraphStatus {
+  id     Int       @id @default(autoincrement())
+  height Float?
+  volume Float?
+  area   Float?
+  time   DateTime?
+  // upperRange Float?
+  // lowerRange Float?
+  status String?
+
+  machineId String?
+  boardId   String?
+
+  Machine Machine? @relation(fields: [machineId], references: [id])
+  Board   Board?   @relation(fields: [boardId], references: [id])
+}
+
+model Component {
+  id          Int       @id @default(autoincrement())
+  pcbBoardNo  Int?      @map("PCBBoardNo")
+  productId   String?   @map("ProductID")
+  ipAddr      String?   @map("IP Addr")
+  mName       String?   @map("M/c Name")
+  operatorId  String?   @map("OperatorID")
+  lotId       String?   @map("LotID")
+  timeStamp   DateTime? @map("TimeStamp")
+  barCode     String?   @map("Bar_code")
+  side        String?   @map("Side")
+  componentNo String?   @map("ComponentNo")
+  pinNumber   String?   @map("PinNumber")
+
+  volumePercent Float? @map("Volume Percent")
+  volumeMm3     Float? @map("Volume(mm3)")
+  heightMm3     Float? @map("Height(mm3)")
+  areaPercent   Float? @map("Area Percent")
+  areaMm2       Float? @map("Area(mm2)")
+  offsetX       Float? @map("OffsetX")
+  offsetY       Float? @map("OffsetY")
+
+  result          String? @map("Result")
+  status          String? @map("Status")
+  panel           String? @map("Panel")
+  padId           String? @map("PAD ID")
+  array           String? @map("Array")
+  padType         String? @map("PAD Type")
+  padVerification String? @map("Pad Verification")
+}
+
+// model MachineLines {
+//   id                Int  @id @default(autoincrement())
+//   machineQuantities Json
+// }
+
+// model AllMachineLinesStatus {
+//   id                Int    @id @default(autoincrement())
+//   label             String
+//   value             String
+//   machineLineNumber Int?
+// }
+
+// model MachineLines {
+//   id         Int @id @default(autoincrement())
+//   machineId  Int
+//   quantity   Int
+//   lineNumber Int
+
+//   machine Machine @relation(fields: [machineId], references: [id])
+// }
